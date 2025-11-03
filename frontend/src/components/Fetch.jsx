@@ -48,7 +48,7 @@ const Fetch = () => {
             console.log(orderData)
 
             const paymentObject = new window.Razorpay({
-                key: "rzp_test_RYoO8MUNnIUSon",
+                key: "rzp_test_RYtBTmj8qPwaFM",
                 amount: orderData.amount,
                 currency: orderData.currency,
                 order_id: orderData.id,
