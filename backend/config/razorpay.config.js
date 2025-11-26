@@ -8,4 +8,3 @@ exports.createRazorpayInstance=()=>{
     key_secret:process.env.RAZORPAY_KEY_SECRET
     })
 }
-

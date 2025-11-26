@@ -33,7 +33,7 @@ const Fetch = () => {
     }, [])
 
 
-    //! Payment-
+    //! One tyme Payment Handler-
     const onPayment = async (price, itemName) => {
         //create order
         try {
@@ -110,6 +110,116 @@ const Fetch = () => {
         }
     }
 
+    //! Subscription Handler-
+    const buySubscription = async (itemName,planId) => {
+        try {
+            // Validate planId
+            if (planId !== "monthly" && planId !== "yearly") {
+                alert("Invalid subscription plan. Please select 'monthly' or 'yearly'.")
+                return
+            }
+
+            // Create subscription on backend
+            const courseId = 1; // You can make this dynamic based on your needs
+            const subscriptionPayload = {
+                courseId: courseId,
+                planId: planId
+            }
+
+            console.log("Creating subscription with payload:", subscriptionPayload)
+
+            const res = await axios.post("http://localhost:4000/api/buySubscription", subscriptionPayload)
+            
+            if (!res.data.success) {
+                alert("Failed to create subscription: " + (res.data.message || "Unknown error"))
+                return
+            }
+
+            const subscriptionData = res.data.subscription
+            console.log("Subscription created:", subscriptionData)
+
+            // Initialize Razorpay subscription checkout
+            const subscriptionObject = new window.Razorpay({
+                key: import.meta.env.VITE_RAZORPAY_KEY,
+                subscription_id: subscriptionData.id,
+                name: "Course Subscription",
+                description: `${planId.charAt(0).toUpperCase() + planId.slice(1)} subscription for ${itemName}`,
+                handler: function (response) {
+                    console.log("Subscription Response:", response);
+
+                    const verificationData = {
+                        subscription_id: response.razorpay_subscription_id,
+                        payment_id: response.razorpay_payment_id,
+                        signature: response.razorpay_signature
+                    }
+                    
+                    console.log("Sending subscription verification request:", verificationData);
+                    
+                    axios.post("http://localhost:4000/api/verifySubscription", verificationData).then((verifyRes) => {
+                        console.log("Subscription Verification Response:", verifyRes.data);
+                        if (verifyRes.data.success) {
+                            alert(`🎉 ${planId.charAt(0).toUpperCase() + planId.slice(1)} subscription activated successfully for ${itemName}!`)
+                            // You can add additional logic here like updating UI or redirecting
+                        } else {
+                            alert("Subscription verification failed: " + (verifyRes.data.message || "Unknown error"))
+                        }
+                    }).catch((error) => {
+                        console.error("Subscription verification error:", error);
+                        if (error.response) {
+                            console.error("Error response:", error.response.data);
+                            alert("Subscription verification failed: " + (error.response.data?.message || error.message))
+                        } else {
+                            alert("Subscription verification failed: Network error")
+                        }
+                    })
+                },
+                modal: {
+                    ondismiss: function() {
+                        console.log("Subscription modal closed by user");
+                        alert("Subscription cancelled");
+                    }
+                },
+                prefill: {
+                    name: "Customer Name",
+                    email: "customer@example.com",
+                    contact: "9999999999"
+                },
+                theme: {
+                    color: "#3399cc"
+                },
+                notes: {
+                    courseId: courseId.toString(),
+                    plan: planId,
+                    itemName: itemName
+                }
+            })
+
+            // Handle subscription payment failure
+            subscriptionObject.on('payment.failed', function (response) {
+                console.error("Subscription payment failed:", response);
+                alert("Subscription payment failed: " + (response.error?.description || "Unknown error"));
+            })
+
+            // Handle subscription cancellation
+            subscriptionObject.on('subscription.cancelled', function (response) {
+                console.log("Subscription cancelled:", response);
+                alert("Subscription was cancelled")
+            })
+
+            // Open subscription checkout
+            subscriptionObject.open();
+
+        } catch (error) {
+            console.error("Subscription initialization error:", error);
+            if (error.response) {
+                console.error("Error response:", error.response.data);
+                alert("Subscription Error: " + (error.response.data?.message || error.response.data?.error || error.message))
+            } else {
+                alert("Subscription Error: " + (error.message || "Failed to initialize subscription. Please try again."))
+            }
+        }
+    }
+
     return (
         <div className='main'>
             <Navbar/>
@@ -117,7 +227,7 @@ const Fetch = () => {
                 data.length > 0 ? data.map((ele, index) => {
                     return (
                         <Fragment key={index}>
-                            <Card data={ele} function={onPayment} />
+                            <Card data={ele} function={buySubscription} />
                         </Fragment>
                     )
                 }) : ""

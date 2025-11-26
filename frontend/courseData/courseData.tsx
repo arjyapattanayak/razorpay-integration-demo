@@ -1,18 +1,22 @@
 export const course=[
     {
    title:"React Course" ,
-   price:"100"
+   price:"199",
+   plan:"monthly"
+},
+ {
+   title:"React Course" ,
+   price:"1999",
+   plan:"yearly"
 },
  {
    title:"Node Course" ,
-   price:"400"
+   price:"199",
+   plan:"monthly"
 },
  {
-   title:"MongoDB Course" ,
-   price:"200"
-},
- {
-   title:"Express Course" ,
-   price:"300"
+   title:"Node Course" ,
+   price:"1999",
+   plan:"yearly"
 },
 ]
